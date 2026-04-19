@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "FakeCheck",
+  "description": "Nakładka pomagająca w weryfikacji informacji i debunkingu fake newsów. Sprawdź wiarygodność informacji krok po kroku.",
+  "version": "1.0.0",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "FakeCheck — Zweryfikuj informację"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "faces/face_sad.png",
+        "faces/face_neutral.png",
+        "faces/face_happy.png",
+        "overlay.css"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
