@@ -5,6 +5,25 @@
 (function () {
   'use strict';
 
+  // ─── Theme System ─────────────────────────────────────────
+  const THEME_STORAGE_KEY = 'fakecheck_theme';
+
+  function getSystemTheme() {
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return 'dark';
+    }
+    return 'light';
+  }
+
+  function getSavedTheme() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(THEME_STORAGE_KEY, (result) => {
+        const saved = result[THEME_STORAGE_KEY];
+        resolve(saved || null);
+      });
+    });
+  }
+
   // Prevent double-injection
   if (window.__fakecheck_injected) {
     return;
@@ -185,6 +204,19 @@
 
     <div class="fc-footer">
       <button class="fc-reset-btn">🔄 Resetuj wszystko</button>
+      <div class="fc-footer-separator"></div>
+      <div class="fc-theme-toggle-wrapper">
+        <label class="fc-theme-toggle-label" title="Przełącz motyw jasny/ciemny">
+          <span class="fc-theme-toggle-icon" id="fc-theme-icon">☀️</span>
+          <input
+            type="checkbox"
+            id="fc-theme-toggle"
+            class="fc-theme-toggle-input"
+            aria-label="Przełącz motyw jasny/ciemny"
+          />
+          <span class="fc-theme-toggle-switch"></span>
+        </label>
+      </div>
     </div>
   `;
 
@@ -196,13 +228,49 @@
   const progressFill = overlay.querySelector('.fc-progress-bar-fill');
   const progressScore = overlay.querySelector('.fc-progress-score');
   const resetBtn = overlay.querySelector('.fc-reset-btn');
-  const checkboxes = overlay.querySelectorAll('input[type="checkbox"]');
+  const checkboxes = overlay.querySelectorAll('.fc-step input[type="checkbox"]');
   const steps = overlay.querySelectorAll('.fc-step');
+  const themeToggle = overlay.querySelector('#fc-theme-toggle');
+  const themeIcon = overlay.querySelector('#fc-theme-icon');
 
   // ─── State ─────────────────────────────────────────────────
 
   let overlayVisible = false;
   let checkedState = {};
+  let userSetTheme = false; // tracks if user manually chose a theme
+
+  // ─── Theme Functions ──────────────────────────────────────
+
+  function setTheme(theme) {
+    host.setAttribute('data-theme', theme);
+
+    if (themeToggle) {
+      themeToggle.checked = (theme === 'dark');
+    }
+    if (themeIcon) {
+      themeIcon.textContent = (theme === 'dark') ? '🌙' : '☀️';
+    }
+  }
+
+  async function initializeTheme() {
+    const saved = await getSavedTheme();
+    if (saved) {
+      userSetTheme = true;
+      setTheme(saved);
+    } else {
+      setTheme(getSystemTheme());
+    }
+  }
+
+  function observeSystemThemeChanges() {
+    if (!window.matchMedia) return;
+    const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    darkModeQuery.addEventListener('change', (e) => {
+      if (!userSetTheme) {
+        setTheme(e.matches ? 'dark' : 'light');
+      }
+    });
+  }
 
   // ─── UI Update Logic ──────────────────────────────────────
 
@@ -385,6 +453,17 @@
     updateUI();
   });
 
+  // Theme toggle
+  if (themeToggle) {
+    themeToggle.addEventListener('change', (e) => {
+      e.stopPropagation();
+      const newTheme = e.target.checked ? 'dark' : 'light';
+      userSetTheme = true;
+      setTheme(newTheme);
+      chrome.storage.local.set({ [THEME_STORAGE_KEY]: newTheme });
+    });
+  }
+
   // Listen for toggle messages from background
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.action === 'toggle') {
@@ -393,6 +472,10 @@
   });
 
   // ─── Initialize ────────────────────────────────────────────
+
+  // Initialize theme first so overlay renders with correct colors
+  initializeTheme();
+  observeSystemThemeChanges();
 
   loadState((state) => {
     checkedState = state;
