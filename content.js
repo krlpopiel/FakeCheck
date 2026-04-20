@@ -74,6 +74,11 @@
     happy: chrome.runtime.getURL('faces/face_happy.png')
   };
 
+  const LOGOS = {
+    light: chrome.runtime.getURL('logo/logo_blue.PNG'),
+    dark: chrome.runtime.getURL('logo/logo_white.PNG')
+  };
+
   const CURRENT_URL = location.href;
 
   // ─── Storage helpers ───────────────────────────────────────
@@ -153,7 +158,7 @@
 
     <div class="fc-header">
       <div class="fc-brand">
-        <span class="fc-brand-icon">🔍</span>
+        <span class="fc-brand-icon"><img class="fc-logo-img" id="fc-brand-logo" src="${LOGOS.light}" alt="FakeCheck logo" draggable="false"></span>
         <span class="fc-brand-name">FakeCheck</span>
       </div>
       <div class="fc-subtitle">Zweryfikuj informację krok po kroku</div>
@@ -232,6 +237,7 @@
   const steps = overlay.querySelectorAll('.fc-step');
   const themeToggle = overlay.querySelector('#fc-theme-toggle');
   const themeIcon = overlay.querySelector('#fc-theme-icon');
+  const brandLogo = overlay.querySelector('#fc-brand-logo');
 
   // ─── State ─────────────────────────────────────────────────
 
@@ -249,6 +255,9 @@
     }
     if (themeIcon) {
       themeIcon.textContent = (theme === 'dark') ? '🌙' : '☀️';
+    }
+    if (brandLogo) {
+      brandLogo.src = LOGOS[theme] || LOGOS.light;
     }
   }
 

@@ -33,6 +33,8 @@
         "faces/face_sad.png",
         "faces/face_neutral.png",
         "faces/face_happy.png",
+        "logo/logo_blue.PNG",
+        "logo/logo_white.PNG",
         "overlay.css"
       ],
       "matches": ["<all_urls>"]
