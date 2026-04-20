@@ -31,15 +31,17 @@ Nakładka prowadzi użytkownika przez 6 kroków weryfikacji, a w prawym dolnym r
 ## Funkcje
 
 - **Overlay jako Shadow DOM** — izolowany od stylów każdej strony, działa wszędzie
+- **Tryb Jasny i Ciemny** — dynamiczny przełącznik motywu z automatycznym wykrywaniem preferencji systemowych
 - **6 kroków weryfikacji** z rozwijanymi opisami (accordion)
 - **Buźka PNG** w prawym dolnym rogu — dynamicznie zmienia się w czasie rzeczywistym
 - **System oceny 0–6** z trzema stanami wizualnymi
 - **Persystencja stanu per URL** — checkboxy pamiętają stan po odświeżeniu
+- **Persystencja motywu** — wtyczka zapamiętuje wybrany tryb (jasny/ciemny)
 - **Linki do metodologii** — Nauka Sprawdza UW (SIFT, 4 Metody)
 - **Pasek postępu** wizualizujący aktualny wynik
 - **Reset stanu** dla bieżącej strony
 - **Zero zależności zewnętrznych** — czysty Vanilla JS
-- **Działa offline** — nie wymaga połączenia z internetem
+- **Działa offline** — nie wymaga połączenia z internetem (poza linkami zewnętrznymi)
 
 ---
 
@@ -49,20 +51,20 @@ Nakładka prowadzi użytkownika przez 6 kroków weryfikacji, a w prawym dolnym r
 fakecheck-extension/
 │
 ├── manifest.json              # Konfiguracja wtyczki (Manifest V3)
-├── background.js              # Service worker — obsługa zdarzeń
-├── content.js                 # Wstrzykiwanie overlaya do strony
+├── background.js              # Service worker — obsługa zdarzeń (np. skrót klawiszowy)
+├── content.js                 # Główna logika — wstrzykiwanie Shadow DOM, obsługa UI i stanu
+├── overlay.css                # Zaawansowane style (zmienne CSS dla motywów, animacje)
 │
-├── overlay/
-│   ├── overlay.html           # Struktura nakładki (Shadow DOM)
-│   ├── overlay.css            # Style nakładki
-│   └── overlay.js             # Logika checkboxów, accordion, buźki
+├── faces/                     # Dynamiczne wskaźniki postępu
+│   ├── face_sad.PNG           # Czerwona smutna buźka (wynik 0–2)
+│   ├── face_neutral.PNG       # Żółta obojętna buźka (wynik 3–4)
+│   └── face_happy.PNG         # Zielona uśmiechnięta buźka (wynik 5–6)
 │
-├── faces/
-│   ├── face_sad.png           # Czerwona smutna buźka (wynik 0–2)
-│   ├── face_neutral.png       # Żółta obojętna buźka (wynik 3–4)
-│   └── face_happy.png         # Zielona uśmiechnięta buźka (wynik 5–6)
+├── logo/                      # Branding dostosowany do motywów
+│   ├── logo_blue.PNG          # Logo dla trybu jasnego
+│   └── logo_white.PNG         # Logo dla trybu ciemnego
 │
-└── icons/
+└── icons/                     # Ikony rozszerzenia
     ├── icon16.png
     ├── icon48.png
     └── icon128.png
@@ -110,13 +112,13 @@ fakecheck-extension/
 
 3. **Overlay wysunie się** z prawej strony — zobaczysz listę 6 kroków weryfikacji.
 
-4. **Kliknij `▼`** przy dowolnym kroku, aby rozwinąć szczegółowy opis, jak go wykonać.
+4. **Kliknij `▼`** lub **tytuł kroku**, aby rozwinąć szczegółowy opis, jak go wykonać.
 
 5. **Zaznaczaj checkboxy** kolejnych kroków w miarę ich realizacji.
 
 6. **Obserwuj buźkę** — zmienia się dynamicznie wraz z Twoim postępem.
 
-7. Po weryfikacji możesz **zresetować stan** przyciskiem na dole overlaya.
+7. **Zmień motyw** — użyj przełącznika ☀️/🌙 w stopce panelu, aby dostosować wygląd do swoich preferencji.
 
 ---
 
@@ -126,11 +128,11 @@ Buźka w prawym dolnym rogu to wizualny wskaźnik postępu weryfikacji. Zmienia 
 
 | Wynik | Buźka | Kolor | Znaczenie |
 |-------|-------|-------|-----------|
-| 0 – 2 | 😞 `face_sad.png` | 🔴 Czerwony `#e74c3c` | Weryfikacja niepełna — zachowaj ostrożność |
-| 3 – 4 | 😐 `face_neutral.png` | 🟡 Żółty `#f39c12` | Częściowo zweryfikowano — sprawdź dalej |
-| 5 – 6 | 😊 `face_happy.png` | 🟢 Zielony `#27ae60` | Weryfikacja kompletna — informacja sprawdzona |
+| 0 – 2 | 😞 `face_sad.PNG` | 🔴 Czerwony | Weryfikacja niepełna — zachowaj ostrożność |
+| 3 – 4 | 😐 `face_neutral.PNG` | 🟡 Żółty | Częściowo zweryfikowano — sprawdź dalej |
+| 5 – 6 | 😊 `face_happy.PNG` | 🟢 Zielony | Weryfikacja kompletna — informacja sprawdzona |
 
-> Buźka posiada pulsujący cień w kolorze odpowiadającym aktualnemu stanowi. Po zaznaczeniu wszystkich 6 kroków wyświetlana jest animacja potwierdzająca.
+> Buźka posiada pulsujący cień w kolorze odpowiadającym aktualnemu stanowi. Po zaznaczeniu wszystkich 6 kroków wyświetlana jest animacja "celebracji" i konfetti.
 
 ---
 
@@ -140,27 +142,24 @@ Wtyczka prowadzi przez 6 kluczowych kroków rzetelnej weryfikacji informacji:
 
 | # | Krok | Co sprawdzasz? |
 |---|------|----------------|
-| 1 | **Zidentyfikuj konkretne twierdzenia** | Co dokładnie jest twierdzone? Kto, kiedy, gdzie? |
-| 2 | **Znajdź pierwotne źródło** | Skąd pochodzi informacja? Czy to cytat z drugiej ręki? |
-| 3 | **Oceń wiarygodność źródła** | Kto za nim stoi? Jakie ma intencje i historię rzetelności? |
-| 4 | **Szukaj potwierdzenia w innych źródłach** | Fact Check Tools API, Google Dorks, niezależne redakcje |
+| 1 | **Zidentyfikuj twierdzenia** | Co dokładnie jest twierdzone? Kto, kiedy, gdzie? Oddziel fakty od opinii. |
+| 2 | **Znajdź pierwotne źródło** | Skąd pochodzi informacja? Czy to cytat z drugiej ręki? Cofnij się do źródła. |
+| 3 | **Oceń wiarygodność źródła** | Kto za nim stoi? Intencje, historia rzetelności. Metoda **SIFT**. |
+| 4 | **Szukaj potwierdzenia** | Inne niezależne źródła, Fact Check Tools API, Google Dorks. |
 | 5 | **Skonsultuj się z ekspertami** | Co mówią naukowcy, instytucje, organizacje branżowe? |
-| 6 | **Oceń kontekst publikacji** | Dlaczego teraz? Czy zdjęcia/wideo nie są wyrwane z kontekstu? |
+| 6 | **Oceń kontekst** | Dlaczego teraz? Czy zdjęcia nie są wyrwane z kontekstu? Emocjonalność przekazu. |
 
-Każdy krok zawiera rozwijany panel z konkretnym przewodnikiem jak go przeprowadzić, w tym wskazówki dotyczące narzędzi takich jak **Google Fact Check Tools** i technik **Google Dorks**.
+Każdy krok zawiera rozwijany panel z konkretnym przewodnikiem jak go przeprowadzić.
 
 ---
 
 ## Persystencja danych
 
-Stan checkboxów jest zapisywany lokalnie w `chrome.storage.local` w powiązaniu z URL bieżącej strony.
+Wtyczka dba o Twoją wygodę, zapamiętując stan pracy:
 
-- ✅ Po odświeżeniu strony — checkboxy pamiętają stan
-- ✅ Po powrocie na tę samą stronę — stan zostaje przywrócony
-- ✅ Każda strona ma **niezależny** stan weryfikacji
-- 🔄 Przycisk **"Resetuj"** w stopce overlaya czyści dane dla bieżącego URL
-
-Dane przechowywane są wyłącznie lokalnie na urządzeniu użytkownika. Wtyczka nie wysyła żadnych danych na zewnętrzne serwery.
+- **Stan weryfikacji:** Zapisywany w `chrome.storage.local` per URL. Po powrocie na stronę Twoje postępy są przywracane.
+- **Wybrany motyw:** Rozszerzenie pamięta, czy preferujesz tryb jasny, czy ciemny, niezależnie od odwiedzanej strony.
+- **Prywatność:** Dane przechowywane są wyłącznie lokalnie na Twoim urządzeniu. Wtyczka nie śledzi Twojej aktywności ani nie wysyła danych na zewnętrzne serwery.
 
 ---
 
@@ -168,11 +167,12 @@ Dane przechowywane są wyłącznie lokalnie na urządzeniu użytkownika. Wtyczka
 
 | Technologia | Zastosowanie |
 |-------------|--------------|
-| **JavaScript (Vanilla)** | Cała logika wtyczki — zero frameworków |
-| **Shadow DOM** | Izolacja CSS overlaya od stylów strony |
-| **Chrome Extensions API (MV3)** | Manifest V3, service worker, `chrome.storage` |
-| **CSS Transitions** | Płynne animacje buźki, accordion, slide-in |
-| **chrome.storage.local** | Persystencja stanu per URL |
+| **JavaScript (Vanilla)** | Cała logika wtyczki — brak zbędnych bibliotek |
+| **Shadow DOM** | Pełna izolacja wizualna od strony hosta |
+| **CSS Variables (Theming)** | Zaawansowany system motywów (Light/Dark mode) |
+| **Chrome Extensions API (MV3)** | Nowoczesny standard Manifest V3 |
+| **Web Animations API** | Płynne przejścia, celebracja postępu, konfetti |
+| **chrome.storage.local** | Persystencja stanu i ustawień użytkownika |
 
 ---
 
@@ -183,16 +183,12 @@ FakeCheck opiera się na metodologii weryfikacji opracowanej przez badaczy i org
 ### 📚 Nauka Sprawdza — Uniwersytet Warszawski
 
 - [**Vademecum weryfikacji — 4 Metody**](https://naukasprawdza.uw.edu.pl/vademecum/#4Metody)
-  Kompleksowy przewodnik po metodach weryfikacji informacji w internecie.
+- [**Metoda SIFT**](https://naukasprawdza.uw.edu.pl/vademecum/#MetodySIFT) — Stop, Investigate, Find, Trace.
 
-- [**Metoda SIFT**](https://naukasprawdza.uw.edu.pl/vademecum/#MetodySIFT)
-  **S**top → **I**nvestigate the source → **F**ind better coverage → **T**race claims
-  Szybka, skuteczna metoda oceny wiarygodności źródeł.
+### 🔧 Przydatne Narzędzia
 
-### 🔧 Narzędzia zewnętrzne (linki w overlay)
-
-- [Google Fact Check Tools Explorer](https://toolbox.google.com/factcheck/explorer) — baza zweryfikowanych twierdzeń
-- Techniki **Google Dorks** — zaawansowane zapytania wyszukiwarkowe do weryfikacji
+- **Google Fact Check Tools** — weryfikacja gotowych twierdzeń.
+- **Google Dorks** — techniki zaawansowanego wyszukiwania do debunkingu.
 
 ---
 
