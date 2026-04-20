@@ -385,8 +385,19 @@
 }
 
 .fc-brand-icon {
-  font-size: 26px;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.fc-logo-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  transition: opacity 0.25s ease;
 }
 
 .fc-brand-name {
